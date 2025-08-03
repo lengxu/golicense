@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-// AutoLicenseCheck 自动授权检查和req.dat生成
-// 这个函数应该在每个模块启动时调用
+// AutoLicenseCheck 自动授权检查和req.dat生成（用于goweb主控平台）
+// 这个函数会在找不到license.dat时自动生成req.dat
 func AutoLicenseCheck(module string) error {
 	licensePath := "bin/license.dat"
 	reqPath := "bin/req.dat"
@@ -120,6 +120,48 @@ func displayLicenseStatus(licensePath string) {
 			fmt.Printf(" (%s)", license.CustomerOrg)
 		}
 		fmt.Println()
+	}
+}
+
+// ValidateOnlyLicense 仅校验授权（用于goscan/gopasswd扫描工具）
+// 这个函数只做授权验证，不会生成req.dat文件
+func ValidateOnlyLicense(module string) error {
+	licensePath := "bin/license.dat"
+	
+	// 1. 检查license.dat是否存在
+	if _, err := os.Stat(licensePath); os.IsNotExist(err) {
+		return fmt.Errorf("未找到授权文件 %s，请先通过goweb平台获取授权", licensePath)
+	}
+	
+	// 2. 验证license.dat
+	if err := ValidateLicense(licensePath); err != nil {
+		return fmt.Errorf("授权验证失败: %v，请重新获取授权", err)
+	}
+	
+	// 3. 检查模块授权
+	if module != "" {
+		if err := CheckLicenseModule(licensePath, module); err != nil {
+			return fmt.Errorf("模块授权检查失败: %v", err)
+		}
+	}
+	
+	// 4. 显示授权信息（简化版）
+	displayLicenseStatusSimple(licensePath)
+	return nil
+}
+
+// displayLicenseStatusSimple 显示简化的授权状态信息
+func displayLicenseStatusSimple(licensePath string) {
+	license, err := GetLicenseInfo(licensePath)
+	if err != nil {
+		return
+	}
+	
+	// 计算剩余天数
+	remainingDays := int((license.ExpiresAt - time.Now().Unix()) / 86400)
+	
+	if remainingDays <= 7 {
+		fmt.Printf("⚠️  授权即将过期！剩余 %d 天\n", remainingDays)
 	}
 }
 
