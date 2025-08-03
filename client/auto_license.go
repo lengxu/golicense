@@ -10,16 +10,15 @@ import (
 // AutoLicenseCheck 自动授权检查和req.dat生成（用于goweb主控平台）
 // 这个函数会在找不到license.dat时自动生成req.dat
 func AutoLicenseCheck(module string) error {
-	licensePath := "bin/license.dat"
-	reqPath := "bin/req.dat"
-	
-	// 确保bin目录存在
-	binDir := filepath.Dir(licensePath)
-	if _, err := os.Stat(binDir); os.IsNotExist(err) {
-		if err := os.MkdirAll(binDir, 0755); err != nil {
-			return fmt.Errorf("failed to create bin directory: %v", err)
-		}
+	// 获取可执行文件所在目录
+	exePath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("failed to get executable path: %v", err)
 	}
+	exeDir := filepath.Dir(exePath)
+	
+	licensePath := filepath.Join(exeDir, "license.dat")
+	reqPath := filepath.Join(exeDir, "req.dat")
 
 	// 1. 检查license.dat是否存在
 	if _, err := os.Stat(licensePath); os.IsNotExist(err) {
@@ -126,7 +125,14 @@ func displayLicenseStatus(licensePath string) {
 // ValidateOnlyLicense 仅校验授权（用于goscan/gopasswd扫描工具）
 // 这个函数只做授权验证，不会生成req.dat文件
 func ValidateOnlyLicense(module string) error {
-	licensePath := "bin/license.dat"
+	// 获取可执行文件所在目录
+	exePath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("failed to get executable path: %v", err)
+	}
+	exeDir := filepath.Dir(exePath)
+	
+	licensePath := filepath.Join(exeDir, "license.dat")
 	
 	// 1. 检查license.dat是否存在
 	if _, err := os.Stat(licensePath); os.IsNotExist(err) {
@@ -167,7 +173,14 @@ func displayLicenseStatusSimple(licensePath string) {
 
 // QuickLicenseCheck 快速授权检查（仅验证，不生成文件）
 func QuickLicenseCheck(module string) error {
-	licensePath := "bin/license.dat"
+	// 获取可执行文件所在目录
+	exePath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("failed to get executable path: %v", err)
+	}
+	exeDir := filepath.Dir(exePath)
+	
+	licensePath := filepath.Join(exeDir, "license.dat")
 	
 	// 检查文件是否存在
 	if _, err := os.Stat(licensePath); os.IsNotExist(err) {

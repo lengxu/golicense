@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"golicense/client"
+	"github.com/lengxu/golicense/client"
 )
 
 func main() {

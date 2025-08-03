@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"golicense/client"
+	"github.com/lengxu/golicense/client"
 )
 
 func main() {
