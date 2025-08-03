@@ -75,7 +75,7 @@ func GenerateLicense(reqFilePath, licenseFilePath string, days int, customer Cus
 		HardwareID:   request.HardwareID,
 		IssuedAt:     now.Unix(),
 		ExpiresAt:    now.AddDate(0, 0, days).Unix(),
-		Modules:      []string{"goscan", "gopasswd", "goweb"},
+		Modules:      []string{"goscan", "gopasswd", "goweb", "goonvif"},
 		CustomerID:   generateCustomerID(request.HardwareID),
 		CustomerName: customer.Name,
 		CustomerOrg:  customer.Org,
