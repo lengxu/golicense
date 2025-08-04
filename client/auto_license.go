@@ -46,8 +46,6 @@ func AutoLicenseCheck(module string) error {
 
 // handleMissingLicense 处理缺失授权文件的情况
 func handleMissingLicense(reqPath string) error {
-	fmt.Println("🔄 正在生成授权请求文件...")
-	
 	// 检查是否已存在req.dat
 	if _, err := os.Stat(reqPath); err == nil {
 		fmt.Printf("✓ 授权请求文件已存在: %s\n", reqPath)
@@ -55,6 +53,8 @@ func handleMissingLicense(reqPath string) error {
 		return fmt.Errorf("等待授权：请联系管理员获取授权文件")
 	}
 
+	fmt.Println("🔄 正在生成授权请求文件...")
+	
 	// 生成新的req.dat
 	if err := GenerateRequest(reqPath); err != nil {
 		return fmt.Errorf("生成授权请求失败: %v", err)
@@ -73,11 +73,20 @@ func handleMissingLicense(reqPath string) error {
 func handleInvalidLicense(reqPath string, validationErr error) error {
 	fmt.Println("🔄 授权文件无效，正在重新生成授权请求...")
 	
-	// 备份旧的req.dat（如果存在）
+	// 备份旧的req.dat（如果存在且还没有备份）
 	if _, err := os.Stat(reqPath); err == nil {
-		backupPath := reqPath + ".backup." + fmt.Sprintf("%d", time.Now().Unix())
-		os.Rename(reqPath, backupPath)
-		fmt.Printf("📦 已备份旧请求文件: %s\n", backupPath)
+		// 检查是否已存在备份文件，避免重复备份
+		backupPattern := reqPath + ".backup.*"
+		matches, _ := filepath.Glob(backupPattern)
+		if len(matches) == 0 {
+			backupPath := reqPath + ".backup." + fmt.Sprintf("%d", time.Now().Unix())
+			os.Rename(reqPath, backupPath)
+			fmt.Printf("📦 已备份旧请求文件: %s\n", backupPath)
+		} else {
+			// 如果已有备份，直接删除当前req.dat
+			os.Remove(reqPath)
+			fmt.Printf("🗑️  删除旧请求文件 (已存在备份)\n")
+		}
 	}
 
 	// 生成新的req.dat
