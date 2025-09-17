@@ -187,6 +187,65 @@ func GetLicenseEdition(licensePath string) (LicenseEdition, error) {
 	return EditionEnterprise, nil
 }
 
+// ValidateOnlyLicense 仅验证授权（不生成req.dat） - 兼容旧接口
+func ValidateOnlyLicense(appName string) error {
+	// 查找license.dat文件
+	licensePath := "license.dat"
+
+	// 尝试多个可能的路径
+	possiblePaths := []string{
+		"license.dat",
+		"./license.dat",
+		"../license.dat",
+		"bin/license.dat",
+		"./bin/license.dat",
+	}
+
+	var foundPath string
+	for _, path := range possiblePaths {
+		if _, err := os.Stat(path); err == nil {
+			foundPath = path
+			break
+		}
+	}
+
+	if foundPath == "" {
+		return errors.New("license.dat file not found")
+	}
+
+	// 验证授权
+	if err := ValidateLicense(foundPath); err != nil {
+		return fmt.Errorf("授权验证失败: %v", err)
+	}
+
+	// 检查应用模块权限
+	return CheckAppModulePermission(foundPath, appName)
+}
+
+// CheckAppModulePermission 检查应用的模块权限
+func CheckAppModulePermission(licensePath string, appName string) error {
+	// 根据应用名称映射到模块
+	var moduleToCheck LicenseModule
+	switch appName {
+	case "goscan":
+		moduleToCheck = ModuleVulnerabilityScan
+	case "gopasswd":
+		moduleToCheck = ModulePasswordAudit
+	case "goonvif", "onvif":
+		moduleToCheck = ModuleCameraScan
+	case "goweb":
+		// goweb需要准入管理权限
+		moduleToCheck = ModuleAdmission
+	default:
+		// 默认检查准入管理权限
+		moduleToCheck = ModuleAdmission
+	}
+
+	// 检查模块权限
+	_, err := CheckModulePermission(licensePath, moduleToCheck)
+	return err
+}
+
 // GetAvailableModules 获取可用的模块列表
 func GetAvailableModules(licensePath string) ([]LicenseModule, error) {
 	license, err := GetLicenseInfo(licensePath)
