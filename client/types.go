@@ -1,6 +1,6 @@
 package client
 
-import "golicense/shared"
+import "github.com/lengxu/golicense/shared"
 
 // 重新导入shared包中的类型
 type LicenseRequest = shared.LicenseRequest

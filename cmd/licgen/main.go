@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"golicense/server"
-	"golicense/shared"
+	"github.com/lengxu/golicense/server"
+	"github.com/lengxu/golicense/shared"
 )
 
 func main() {

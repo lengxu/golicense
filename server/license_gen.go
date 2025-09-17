@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"golicense/shared"
+	"github.com/lengxu/golicense/shared"
 )
 
 // CustomerInfo 客户信息
