@@ -133,33 +133,31 @@ func displayLicenseStatus(licensePath string) {
 
 // ValidateOnlyLicense 仅校验授权（用于goscan/gopasswd扫描工具）
 // 这个函数只做授权验证，不会生成req.dat文件
-func ValidateOnlyLicense(module string) error {
+func ValidateOnlyLicense(appName string) error {
 	// 获取可执行文件所在目录
 	exePath, err := os.Executable()
 	if err != nil {
 		return fmt.Errorf("failed to get executable path: %v", err)
 	}
 	exeDir := filepath.Dir(exePath)
-	
+
 	licensePath := filepath.Join(exeDir, "license.dat")
-	
+
 	// 1. 检查license.dat是否存在
 	if _, err := os.Stat(licensePath); os.IsNotExist(err) {
 		return fmt.Errorf("未找到授权文件 %s，请先通过goweb平台获取授权", licensePath)
 	}
-	
+
 	// 2. 验证license.dat
 	if err := ValidateLicense(licensePath); err != nil {
 		return fmt.Errorf("授权验证失败: %v，请重新获取授权", err)
 	}
-	
-	// 3. 检查模块授权
-	if module != "" {
-		if err := CheckLicenseModule(licensePath, module); err != nil {
-			return fmt.Errorf("模块授权检查失败: %v", err)
-		}
+
+	// 3. 检查应用模块权限
+	if err := CheckAppModulePermission(licensePath, appName); err != nil {
+		return fmt.Errorf("模块授权检查失败: %v", err)
 	}
-	
+
 	// 4. 显示授权信息（简化版）
 	displayLicenseStatusSimple(licensePath)
 	return nil
