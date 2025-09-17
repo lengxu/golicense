@@ -114,19 +114,98 @@ func GetLicenseInfo(licenseFilePath string) (*License, error) {
 	return &license, nil
 }
 
-// CheckLicenseModule 检查模块授权
-func CheckLicenseModule(licenseFilePath string, moduleName string) error {
-	license, err := GetLicenseInfo(licenseFilePath)
+// CheckLicenseModule 检查模块授权（兼容旧版本）
+func CheckLicenseModule(licensePath string, module string) error {
+	license, err := GetLicenseInfo(licensePath)
 	if err != nil {
 		return err
 	}
 
-	// 检查模块是否在授权列表中
-	for _, module := range license.Modules {
-		if module == moduleName {
+	// 新版本授权：检查详细模块权限
+	if len(license.ModulePerms) > 0 {
+		for _, perm := range license.ModulePerms {
+			if string(perm.Module) == module && perm.Enabled {
+				return nil
+			}
+		}
+		return fmt.Errorf("模块 '%s' 未授权或已禁用", module)
+	}
+
+	// 旧版本授权：检查简单模块列表
+	for _, allowedModule := range license.Modules {
+		if string(allowedModule) == module {
 			return nil
 		}
 	}
 
-	return fmt.Errorf("module '%s' not authorized", moduleName)
+	return fmt.Errorf("模块 '%s' 未授权", module)
+}
+
+// CheckModulePermission 检查模块的详细权限
+func CheckModulePermission(licensePath string, module LicenseModule) (*ModulePermissions, error) {
+	license, err := GetLicenseInfo(licensePath)
+	if err != nil {
+		return nil, err
+	}
+
+	// 查找对应模块的权限配置
+	for _, perm := range license.ModulePerms {
+		if perm.Module == module {
+			if !perm.Enabled {
+				return nil, fmt.Errorf("模块 '%s' 已被禁用", module)
+			}
+			return &perm, nil
+		}
+	}
+
+	return nil, fmt.Errorf("模块 '%s' 未找到授权配置", module)
+}
+
+// IsModuleEnabled 检查模块是否启用
+func IsModuleEnabled(licensePath string, module LicenseModule) bool {
+	_, err := CheckModulePermission(licensePath, module)
+	return err == nil
+}
+
+// GetLicenseEdition 获取授权版本
+func GetLicenseEdition(licensePath string) (LicenseEdition, error) {
+	license, err := GetLicenseInfo(licensePath)
+	if err != nil {
+		return "", err
+	}
+
+	// 新版本直接返回版本信息
+	if license.Edition != "" {
+		return license.Edition, nil
+	}
+
+	// 旧版本通过模块数量推断版本
+	moduleCount := len(license.Modules)
+	if moduleCount <= 1 {
+		return EditionBasic, nil
+	}
+	return EditionEnterprise, nil
+}
+
+// GetAvailableModules 获取可用的模块列表
+func GetAvailableModules(licensePath string) ([]LicenseModule, error) {
+	license, err := GetLicenseInfo(licensePath)
+	if err != nil {
+		return nil, err
+	}
+
+	var availableModules []LicenseModule
+
+	// 新版本：从ModulePerms获取启用的模块
+	if len(license.ModulePerms) > 0 {
+		for _, perm := range license.ModulePerms {
+			if perm.Enabled {
+				availableModules = append(availableModules, perm.Module)
+			}
+		}
+		return availableModules, nil
+	}
+
+	// 旧版本：返回所有模块
+	return license.Modules, nil
 }
